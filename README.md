@@ -11,6 +11,6 @@ To approximately replicate all results in the paper:
 https://data.mendeley.com/preview/6g72mndtys?a=7eac386e-07ec-49cd-8437-434592e066ea
 These data should be added to the "intermediate_data/" folder.
 
-3. Execute the code "code/Master_script"
+3. Execute the code "code/Master_script". Ensure that use_rounded_data is set to 1.
 
 Note that the Mendeley data is a non-confidential version of the original data. Addresses have been removed and tree canopy data has been rounded to preserve anonymity. As a result, statistical results may not exactly replicate the results in the paper. Geographic information has been jittered to preserve anonymity.
