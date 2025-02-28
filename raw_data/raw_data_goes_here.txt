@@ -1,0 +1,7 @@
+In order to run data_preparation.R, the following files should be present in this folder:
+
+data_FINAL_2022_12_19.csv
+data_random_tree.csv
+LEAF_txt
+LEAF2.txt
+Municipal_address_points.csv
