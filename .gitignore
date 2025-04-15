@@ -1,0 +1,4 @@
+raw_data/*.*
+intermediate_data/*.*
+figures_tables_output/*.*
+*.csv
