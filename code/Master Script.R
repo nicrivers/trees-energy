@@ -43,8 +43,6 @@ if (use_rounded_data == 0) {
 ######################################################## SECTION 1 #######################################################################
                                                        #############
 #DESCRIPTIVE STATITICS, PLOTS, and TABLES 
-#clear all data frames from environment
-rm(list = ls())
 
 #read only the required data sets  
 dat <- read_csv("../intermediate_data/elecdat.csv") %>%
@@ -85,7 +83,7 @@ address_points_jittered <- read_sf("../intermediate_data/address_points_jittered
 
 
 #set a uniform theme for all the plots
-journal_theme <- function(base_size = 12, base_family = "Arial") {
+journal_theme <- function(base_size = 12, base_family = "sans") {
   theme_minimal(base_size = base_size, base_family = base_family) +
     theme(
       text = element_text(color = "black", size = base_size, family = base_family),
@@ -188,8 +186,8 @@ address_trees <- st_as_sf(address_trees)
 
 tree <-ggplot()+
   geom_sf(data = zoning)+
-  geom_sf(data = address_trees, aes(color = tree_percent), size=1, alpha=0.5) +
-  scale_color_viridis_c() +  # This provides a nice color scale
+  geom_sf(data = address_trees, aes(color = 100*tree_percent), size=1, alpha=0.5) +
+  scale_color_viridis_b() +  # This provides a nice color scale
   labs(color = "Tree Canopy Coverage (%)",
        size = "Tree Canopy Coverage (%)") +
   coord_sf()+
@@ -276,23 +274,7 @@ t <- est_12.5%>%
   group_by(tree_discrete,summer)%>%
   summarise(avr_E=mean(elec,na.rm=TRUE))
 
-#add this to data
-ann_df <- data.frame(
-  summer = c("0", "0", "1", "1"),
-  label = c("Average Consumption (0%-25% UTC): 1.05",
-            "Average Consumption (25%-100% UTC): 1.08",
-            "Average Consumption (0%-25% UTC): 1.3",
-            "Average Consumption (25%-100% UTC): 1.12"),
-  color = c("red", "blue", "red", "blue"),
-  # Here we choose an x position near the left of the x–scale (e.g., x = 1)
-  x = 0,
-  # And choose two different y positions for the two boxes.
-  # (Change these numbers so they appear in the top left of your panels.)
-  y = c(1.8, 1.75, 1.8, 1.75)
-)
 
-ann_df <- ann_df %>%
-  mutate(color = factor(color)) # Convert color column to factor
 
 #plot
 ggplot(data = est_12.5%>%
@@ -303,28 +285,20 @@ ggplot(data = est_12.5%>%
          group_by(tree_discrete, hour, summer) %>%
          summarise(avr_E=mean(elec, na.rm=TRUE), .groups = "drop"), 
        aes(x = hour, y = avr_E, color = tree_discrete)) +
-  scale_color_manual(name="Tree Canopy Groups", values=c("0%-25% Canopy" = "red", "25%-100% Canopy" = "steelblue")) +
+  scale_color_manual(name="Tree Canopy Groups", values=c("0%-25% Canopy" = "firebrick", "25%-100% Canopy" = "steelblue")) +
   geom_point() +
   geom_line() +
-  scale_x_continuous(breaks = seq(0, 24, by = 2)) +
+  scale_x_continuous(breaks = c(0, 6,12,18)) +
   facet_wrap(~summer, labeller = labeller(
     summer = as_labeller(c("1" = "In-leaf", "0" = "Off-leaf")))) +
   labs(
     x = "Hour",
-    y = "Average Electricity Consumption (kW/h)") +
+    y = "Average Electricity Consumption (kWh/h)"
+    ) +
   journal_theme() +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) +
-  geom_label(data = ann_df,
-             aes(x = x, y = y, label = label, fill = color), alpha=0.5,  # Ensure fill is mapped to color
-             color = "black", # Text color remains black
-             size = 2.5,
-             hjust = 0,         # Left-align the text within the box
-             vjust = 1,         # Align at the top of the label
-             show.legend = FALSE,
-             inherit.aes = FALSE) +
-  scale_fill_manual(values = c("blue" = "steelblue", "red" = "red")) # Define fill colors
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) 
 
-ggsave("../figures_tables_output/E-by-canopy-season2.jpg",width = 25,height = 21,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/E-by-canopy-season2.jpg",width = 15,height = 15,units = c("cm"),dpi=300)
 
 #Energy consumption by weather and tree canopy group
 #####################################################
@@ -504,9 +478,6 @@ ggsave("../figures_tables_output/wind-hum-month.jpg",width = 27,height = 30,unit
 
 # Estimate the LASSO model 
 ########################################################################################
-#clear all data frames from environment
-rm(list = ls())
-gc()
 
 #read the prepared estimation and prediction sample 
 
@@ -623,8 +594,6 @@ saveRDS(lasso.elec, file="../intermediate_data/final_lasso_model.rds")
 
 #Prediction of Electricity savings with LASSO estimates
 ##############################################################################################
-rm(list = ls())
-gc()
 
 # Read the data
 
@@ -730,11 +699,10 @@ write_csv(prediction_sample,"../intermediate_data/Lasso-prediction.csv")
 
 #PLOTS FOR ELECTERICITY SAVINGS ESTIMATED FROM THE LASSO MODEL 
 
-#clear all data frames from environment
-rm(list = ls())
+
 
 #uniform plot theme
-journal_theme <- function(base_size = 12, base_family = "Arial") {
+journal_theme <- function(base_size = 12, base_family = "sans") {
   theme_minimal(base_size = base_size, base_family = base_family) +
     theme(
       text = element_text(color = "black", size = base_size, family = base_family),
@@ -795,6 +763,12 @@ save <- ggplot(data = prediction_sample_lasso %>%
       "7" = "red",
       "8" = "#F0AD4E",
       "9" = "black"
+    ), labels = c(
+      "May",
+      "June",
+      "July",
+      "August",
+      "September"
     )
   ) +
   labs(
@@ -870,7 +844,7 @@ elec_with_shading <- ggplot(data = elec_price %>%
   # Customize x-axis and y-axis
   scale_x_continuous(breaks = seq(0, 24, by = 2)) +
   labs(
-    y = "Average Electricity Price (USD/kWh)",
+    y = "Electricity Price (USD/kWh)",
     x = "Hour"
   ) +
   # Add legend for TOU levels and their colors
@@ -888,11 +862,17 @@ elec_with_shading <- ggplot(data = elec_price %>%
   )
 
 #Electricity savings and price together
-ggarrange(save,elec_with_shading,
+ggarrange(save + scale_x_continuous(limits = c(0, 24), breaks = c(0, 6, 12, 18)),
+          elec_with_shading+scale_x_continuous(limits = c(0, 24), breaks = c(0, 6, 12, 18)),
           labels = c("A", "B"),
-          nrow = 2,ncol = 1)
+          nrow = 2,ncol = 1,
+          align="v",
+          label.x = 0.78,   # 1 = right edge
+          label.y = 1,      # 1 = top
+          hjust = 1,        # right-align text
+          vjust = 1)
 
-ggsave("../figures_tables_output/save-price-peak3.jpg",width = 35,height = 32,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/save-price-peak3.jpg",width = 15,height = 15,units = c("cm"),dpi=300)
 
 #annual savings by tree canopy
 ##############################
@@ -903,13 +883,13 @@ prediction_sample_lasso %>%
   inner_join(prices) %>%
   summarise(tree_saving_predicted_dollars = sum(tree_saving_predicted * elec * price)) %>%
   ggplot(aes(x=tree_percent, y=tree_saving_predicted_dollars)) +
+  geom_point() +  
   geom_smooth(method="lm", se=F, colour="firebrick") +
-  geom_point() +
   journal_theme()+
-  scale_x_continuous(name="Urban Tree Canopy Coverage within 12.5m", labels=scales::percent_format()) +
+  scale_x_continuous(name="Urban Tree Canopy Coverage", labels=scales::percent_format()) +
   scale_y_continuous(name="Annual Electricity Savings (USD)", labels=scales::dollar_format())
 
-ggsave("../figures_tables_output/annual save.jpg",width = 20,height = 16,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/annual save.jpg",width = 8,height = 8,units = c("cm"),dpi=300)
 
 
 #consumption by load duration curve and between scenarios
@@ -944,13 +924,21 @@ load <-ggplot(data=t,aes(x=hour)) +
   journal_theme() +
   labs(
     x="Hour",
-    y="Electricity Consumption (kW/h)",
+    y="Electricity Consumption (kWh/h)",
     color = "Scenario") +  # This creates the legend title
-  scale_color_manual(values = c("Current UTC" = "lightgreen", "No UTC" = "red"))  # Assign colors
+  scale_color_manual(values = c("Current UTC" = "lightgreen", "No UTC" = "red")) + # Assign colors
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.95, 0.95),
+    legend.justification = c("right", "top"),
+    legend.background = element_rect(fill = alpha("white", 0.7), color = NA),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  )
 
 load
 
-ggsave("../figures_tables_output/load-duration.jpg",width = 20,height = 16,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/load-duration.jpg",width = 8,height = 8,units = c("cm"),dpi=300)
 
 
 
@@ -958,9 +946,9 @@ ggsave("../figures_tables_output/load-duration.jpg",width = 20,height = 16,units
 #######################################################################################
 ## load the model objects
 #########################
-rm(list=ls())
 
-journal_theme <- function(base_size = 12, base_family = "Arial") {
+
+journal_theme <- function(base_size = 12, base_family = "sans") {
   theme_minimal(base_size = base_size, base_family = base_family) +
     theme(
       text = element_text(color = "black", size = base_size, family = base_family),
@@ -1076,8 +1064,8 @@ temp <-new_sample %>%
   ggplot(aes(x=temp, y=tree_saving_predicted)) + 
   geom_line(colour="red") +
   journal_theme() +
-  scale_y_continuous(name="Predicted Electericty Savings", labels=scales::percent_format()) +
-  labs(x="Teperature (°C)")
+  scale_y_continuous(name="Predicted Electricty Savings", labels=scales::percent_format()) +
+  labs(x="Temp. (°C)")
 
 temp
 
@@ -1086,7 +1074,7 @@ temp
 dens_plot_temp <- ggplot(pred_12.5 %>% filter(summer==1), aes(x = temp)) +
   geom_density(fill = "gray", color = "black", alpha = 0.4) +
   journal_theme() +
-  labs(x = NULL, y = "Temperature Distribution")  
+  labs(x = NULL, y = "Density")  
 
 # Arrange plots: Place density plot above the main plot
 combined_plot_temp <- ggarrange(
@@ -1143,8 +1131,8 @@ hum <-new_sample_hum %>%
   ggplot(aes(x=rel_hum, y=tree_saving_predicted)) + 
   geom_line(colour="red") +
   journal_theme() +
-  scale_y_continuous(name="Predicted Electericty Savings", labels=scales::percent_format())+
-  labs(x="Relative Humidity (%)")
+  scale_y_continuous(name="Predicted Electricty Savings", labels=scales::percent_format())+
+  labs(x="Rel. Humidity (%)")
 
 
 #add the density plot to humidity plot
@@ -1152,7 +1140,7 @@ hum <-new_sample_hum %>%
 dens_plot_hum <- ggplot(pred_12.5 %>% filter(summer == 1), aes(x = rel_hum)) +
   geom_density(fill = "gray", color = "black", alpha = 0.4) +
   journal_theme() +
-  labs(x = NULL, y = "Relative Humidity Distribution") 
+  labs(x = NULL, y = "Density") 
 
 # Arrange plots: Place histogram above the main plot
 combined_plot_hum <- ggarrange(
@@ -1209,15 +1197,15 @@ wind <-new_sample_wind %>%
   ggplot(aes(x=wind_spd, y=tree_saving_predicted)) + 
   geom_line(colour="red") +
   journal_theme() +
-  scale_y_continuous(name="Predicted Electericty Savings", labels=scales::percent_format()) +
-  labs(x="Wind Speed (km/h)")
+  scale_y_continuous(name="Predicted Electricty Savings", labels=scales::percent_format()) +
+  labs(x="Wind Spd. (km/h)")
 
 #add the density plot to wind plot 
 
 dens_plot_wind<- ggplot(pred_12.5 %>% filter(summer == 1), aes(x = wind_spd)) +
   geom_density(fill = "gray", color = "black", alpha = 0.4) +
   journal_theme() +
-  labs(x = NULL, y = "Wind Speed Distribution")  # Remove x label for cleaner alignment
+  labs(x = NULL, y = "Density")  # Remove x label for cleaner alignment
 
 # Arrange plots: Place density above the main plot
 combined_plot_wind <- ggarrange(
@@ -1232,7 +1220,7 @@ ggarrange(combined_plot_temp,
           labels = c("A","B","C"),
           nrow = 1,ncol = 3)
 
-ggsave("../figures_tables_output/tree-weather-interaction.jpg",width = 35,height = 32,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/tree-weather-interaction.jpg",width = 15,height = 15,units = c("cm"),dpi=300)
 
 #Comparison of savings from current UTC and adjusted UTC
 ########################################################
@@ -1358,11 +1346,12 @@ ggplot(data = avr_save_current_adj, aes(x = time, y = avr_saving, color = scenar
   journal_theme() +
   theme(
     panel.border = element_rect(colour = "black", fill = NA, size = 1),
-    strip.text = element_text(size = 12, face = "bold")  # Adjust facet strip labels
+    strip.text = element_text(size = 12, face = "bold"),  # Adjust facet strip labels
+    legend.position = "none"
   )
 
 
-ggsave("../figures_tables_output/adj-current-scenario.jpg",width = 20,height = 16,units = c("cm"),dpi=300)
+ggsave("../figures_tables_output/adj-current-scenario.jpg",width = 15,height = 15,units = c("cm"),dpi=300)
 
                                                                ###############
 ################################################################ SECTION 3 #####################################################
@@ -1370,7 +1359,6 @@ ggsave("../figures_tables_output/adj-current-scenario.jpg",width = 20,height = 1
 #REGRESSION MODELS 
 
 #clear all data frames from environment
-rm(list = ls())
 
 #read the estimation sample for:
 #1-tree canopy measures (%) within 12.5 meter
