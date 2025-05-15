@@ -925,7 +925,7 @@ t1 <- t %>%
 # Calculate % difference (relative to "no tree")
 tree_val <- t1$value[t1$name == "actual_consumption"]
 no_tree_val <- t1$value[t1$name == "predicted_consumption_notree"]
-perc_diff <- 100 * (no_tree_val - tree_val) / no_tree_val
+perc_diff <- 100 * (no_tree_val - tree_val) / tree_val
 
 ggplot(data=t %>% pivot_longer(cols=-1), aes(x=hour, y=value, colour=name, linetype=name)) +
   geom_line(linewidth=1.2) +
@@ -957,6 +957,12 @@ ggplot(data=t %>% pivot_longer(cols=-1), aes(x=hour, y=value, colour=name, linet
 
 ggsave("../figures_tables_output/load-duration.jpg",width = 8,height = 8,units = c("cm"),dpi=300)
 
+# Savings at different points
+t %>%
+  pivot_longer(cols = -1) %>%
+  filter(hour %in% c(1,round(0.01*8760,0),round(0.1*8760,0))) %>%
+  pivot_wider(names_from=name, values_from=value) %>%
+  mutate(perc_diff = (predicted_consumption_notree - actual_consumption)/actual_consumption)
 
 
 #predicted savings by weather variables (when there is no correlation between variables) 
