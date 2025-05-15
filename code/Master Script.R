@@ -849,7 +849,7 @@ elec_with_shading <- ggplot(data = elec_price %>%
   ) +
   # Add legend for TOU levels and their colors
   scale_fill_manual(
-    name = "TOU in Summer Weekdays",
+    name = "  TOU in Summer Weekdays",
     values = setNames(tou_categories$fill_color, tou_categories$TOU_Level)
   ) +
   # Apply theme
@@ -916,27 +916,44 @@ t<- prediction_sample_lasso %>%
   )
 
 #Load duration curve for each scenario
-load <-ggplot(data=t,aes(x=hour)) +
-  geom_line(aes(y=actual_consumption, color="Current UTC")) +
-  geom_line(aes(y=predicted_consumption_notree, color="No UTC")) +
-  #geom_point(aes(y=actual_consumption, color="Current UTC"), size=1) +
-  #geom_point(aes(y=predicted_consumption_notree, color="No UTC"), size=1)+
+# Get the values at hour == 1
+t1 <- t %>%
+  pivot_longer(cols = -1) %>%
+  filter(hour == 1) %>%
+  select(name, value)
+
+# Calculate % difference (relative to "no tree")
+tree_val <- t1$value[t1$name == "actual_consumption"]
+no_tree_val <- t1$value[t1$name == "predicted_consumption_notree"]
+perc_diff <- 100 * (no_tree_val - tree_val) / no_tree_val
+
+ggplot(data=t %>% pivot_longer(cols=-1), aes(x=hour, y=value, colour=name, linetype=name)) +
+  geom_line(linewidth=1.2) +
   journal_theme() +
   labs(
     x="Hour",
-    y="Electricity Consumption (kWh/h)",
-    color = "Scenario") +  # This creates the legend title
-  scale_color_manual(values = c("Current UTC" = "lightgreen", "No UTC" = "red")) + # Assign colors
+    y="Electricity Consumption (kWh/h)") +  
+  scale_color_manual(name="Scenario", values = c("actual_consumption" = "#228B22", "predicted_consumption_notree" = "#E69F00"), labels = c("actual_consumption" = "Current UTC", "predicted_consumption_notree" = "No UTC")) + 
+  scale_linetype_manual(name="Scenario", values=c("actual_consumption" = "solid", "predicted_consumption_notree" = "dotdash"), labels = c("actual_consumption" = "Current UTC", "predicted_consumption_notree" = "No UTC")) +
   theme(
     legend.position = "inside",
-    legend.position.inside = c(0.95, 0.95),
+    legend.position.inside = c(0.95, 0.6),
     legend.justification = c("right", "top"),
     legend.background = element_rect(fill = alpha("white", 0.7), color = NA),
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
-  )
+  ) +
+  geom_segment(data = t1,
+               aes(x = 1, xend = 2000, y = value, yend = value),
+               linetype = "dotted",
+               inherit.aes = FALSE) +
+  # Text annotation showing difference
+  annotate("text",
+           x = 4500,
+           y = mean(c(tree_val, no_tree_val)),
+           label = paste0("Δ Consumption = ", round(perc_diff, 1), "%"),
+           size = 4, fontface = "italic")
 
-load
 
 ggsave("../figures_tables_output/load-duration.jpg",width = 8,height = 8,units = c("cm"),dpi=300)
 
