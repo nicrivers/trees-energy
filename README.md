@@ -2,7 +2,7 @@
 
 This repository includes replication material for:
 "Quasi-experimental evidence on the effect of the urban tree canopy on energy consumption"
-by Fatemah Ravazdezh and Nicholas Rivers
+by Fatima Ravazdezh and Nicholas Rivers
 
 To approximately replicate all results in the paper:
 1. Clone the repository
